@@ -4,9 +4,9 @@ provider "azuredevops" {
 }
 
 resource "azuredevops_project" "project" {
-  name               = var.ado_project_name
-  description        = var.ado_project_description
-  visibility         = var.ado_project_visibility
+  name               = local.ado_project_name
+  description        = local.ado_project_description
+  visibility         = local.ado_project_visibility
   version_control    = "Git"   # This will always be Git for me
   work_item_template = "Agile" # Not sure if this matters, check back later
 
@@ -20,9 +20,10 @@ resource "azuredevops_project" "project" {
   }
 }
 
-/*resource "azuredevops_serviceendpoint_github" "serviceendpoint_github" {
+
+resource "azuredevops_serviceendpoint_github" "serviceendpoint_github" {
   project_id            = azuredevops_project.project.id
-  service_endpoint_name = "terraform-tuesdays"
+  service_endpoint_name = "project"
 
   auth_personal {
     personal_access_token = var.ado_github_pat
@@ -33,58 +34,24 @@ resource "azuredevops_resource_authorization" "auth" {
   project_id  = azuredevops_project.project.id
   resource_id = azuredevops_serviceendpoint_github.serviceendpoint_github.id
   authorized  = true
-}*/
+}
 
 resource "azuredevops_variable_group" "variablegroup" {
   project_id   = azuredevops_project.project.id
-  name         = "terraform-tuesdays"
+  name         = "variable-group"
   description  = "Variable group for pipelines"
   allow_access = true
 
   variable {
-    name  = "storageaccount"
-    value = azurerm_storage_account.sa.name
+    name  = "service_name"
+    value = "key_vault"
   }
 
   variable {
-    name  = "container_name"
-    value = var.az_container_name
+    name = "key_vault_name"
+    value = local.az_key_vault_name
   }
 
-  variable {
-    name  = "key"
-    value = var.az_state_key
-  }
-
-  variable {
-    name         = "sas_token"
-    secret_value = data.azurerm_storage_account_sas.state.sas
-    is_secret    = true
-  }
-
-  variable {
-    name         = "az_client_id"
-    secret_value = var.az_client_id
-    is_secret    = true
-  }
-
-  variable {
-    name         = "az_client_secret"
-    secret_value = var.az_client_secret
-    is_secret    = true
-  }
-
-  variable {
-    name         = "az_subscription"
-    secret_value = var.az_subscription
-    is_secret    = true
-  }
-
-  variable {
-    name         = "az_tenant"
-    secret_value = var.az_tenant
-    is_secret    = true
-  }
 }
 
 resource "azuredevops_build_definition" "pipeline_1" {
@@ -97,13 +64,13 @@ resource "azuredevops_build_definition" "pipeline_1" {
     use_yaml = true
   }
 
-  /*repository {
+  repository {
     repo_type             = "GitHub"
     repo_id               = var.ado_github_repo
     branch_name           = "main"
     yml_path              = var.ado_pipeline_yaml_path_1
     service_connection_id = azuredevops_serviceendpoint_github.serviceendpoint_github.id
-  }*/
+  }
 
 }
 
@@ -121,9 +88,9 @@ resource "azuredevops_serviceendpoint_azurerm" "key_vault" {
     serviceprincipalkey = random_password.service_connection.result
   }
 
-  azurerm_spn_tenantid = data.azurerm_client_config.current.tenant_id
-  azurerm_subscription_id = data.azurerm_client_config.current.subscription_id
-  azurerm_subscription_name = data.azurerm_subscription.current.display_name
+  azurerm_spn_tenantid = "18c3b4f7-e526-4f98-939a-19118361cac0"
+  azurerm_subscription_id = "94a5c35a-b41a-4ffa-a37a-7d5df5344262"
+  azurerm_subscription_name = "Anblicks - IP"
 }
 
 resource "azuredevops_resource_authorization" "kv_auth" {
@@ -132,4 +99,3 @@ resource "azuredevops_resource_authorization" "kv_auth" {
   authorized  = true
 }
 
-# Key Vault task is here: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/deploy/azure-key-vault?view=azure-devops
