@@ -1,5 +1,5 @@
 resource "azuread_application" "service_connection" {
-  display_name               = var.azad_service_connection_sp_name
+  display_name               = local.azad_service_connection_sp_name
 }
 
 resource "azuread_service_principal" "service_connection" {
@@ -15,11 +15,11 @@ resource "azuread_service_principal_password" "service_connection" {
   value = random_password.service_connection.result
 }
 
-# Creation of SP for creation of Azure resources in selected subscription.
+# Create SP for creation of Azure resources in selected subscription.
 # These credentials will be written to the Key Vault and retrieved during pipeline run
 
 resource "azuread_application" "resource_creation" {
-  display_name               = var.azad_resource_creation_sp_name
+  display_name               = local.azad_resource_creation_sp_name
 }
 
 resource "azuread_service_principal" "resource_creation" {
