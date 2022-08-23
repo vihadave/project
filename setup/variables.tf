@@ -1,114 +1,77 @@
-variable "azad_service_connection_sp_name" {
-  type = string
-  description = "service connection name"
-  #value =  
-}
-
-variable "azad_resource_creation_sp_name" {
-  type = string
-  description = "name of service principal for creation of resources"
-  #value = "project/resources/resource_creation_pipeline.yml"
-}
-
 variable "ado_org_service_url" {
-  type = string
-  description = "personal access token"
-  #value = https://dev.azure.com/vihadave/
+  type        = string
+  description = "Org service url for Azure DevOps"
+  default = "https://dev.azure.com/vihadave/"
 }
 
-variable "ado_project_name" {
-  type = string
-  description = "project name in azure devops"
-  #value =
+variable "ado_github_repo" {
+  type        = string
+  description = "Name of the repository in the format <GitHub Org>/<RepoName>"
+  default     = "vihadave/project"
 }
 
-variable "ado_project_description" {
-  type = string
-  description = "azure devops project description"
-  #value = 
+variable "ado_pipeline_yaml_path_1" {
+  type        = string
+  description = "Path to the yaml for the first pipeline"
+  default     = "project/resources/Resource_Creation_pipeline.yml"
 }
 
-variable "ado_project_visibility" {
-  type = string
-  description = "azure devops project visibility"
-  #value = 
+variable "ado_github_pat" {
+  type        = string
+  description = "Personal authentication token for GitHub repo"
+  default = "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"
+  sensitive   = true
 }
 
-variable "az-client-id" {
-  type = string
-  description = "application id of azure ad application"
-  value = azuread_application.resource_creation.application_id
-}
-
-variable "az-client-secret" {
-  type = string
-  description = "password"
-  value = random_password.resource_creation.result
-}
-
-variable "az-subscription" {
-  type = string
-  description = "subscription id"
-  value = data.azurerm_client_config.current.subscription_id
-}
-
-variable "az-tenant" {
-  type = string
-  description = "tenant id"
-  value = data.azurerm_client_config.current.tenant_id
-}
-
-variable "azad_service_connection_sp_name" {
-  type = string
-  description = "service connection sp name"
-  value = "${var.prefix}-service-connection-${random_integer.suffix.result}"
-}
-
-variable "azad_resource_creation_sp_name" {
-  type = string
-  description = "resource creation sp name"
-  value = "${var.prefix}-resource-creation-${random_integer.suffix.result}"
+variable "prefix" {
+  type        = string
+  description = "Naming prefix for resources"
+  default     = "automated"
 }
 
 variable "az_location" {
-  type = string
-  description = "location"
-  #value = "Central US"
+  type    = string
+  default = "Central US"
 }
 
 variable "az_container_name" {
-  type = string
-  description = "backend container name"
-  #value = ""
+  type        = string
+  description = "Name of container on storage account for Terraform state"
+  default     = "tfstatedata"
 }
 
 variable "az_state_key" {
-  type = string
-  description = "name of key in backend st"
-  #value = "terraform.tfstate"
-}
-
-variable "az_client_id" {
-  type = string
-  description = "client id with permissions for creation of resources in azure, use env variables"
-}
-
-variable "az_client_secret" {
-  type = string
-  description = "client secret with permissions for creation of resources in azure, use env variables"
-}
-
-variable "az_subscription" {
-  type = string
-  description = "client id subscription, use env variables"
-}
-
-variable "az_tenant" {
-  type = string
-  description = "client id azure tenant, use env variables"
+  type        = string
+  description = "Name of key in storage account for Terraform state"
+  default     = "terraform.tfstate"
 }
 
 resource "random_integer" "suffix" {
   min = 10000
   max = 99999
+}
+
+locals {
+  ado_project_name        = "${var.prefix}-project-${random_integer.suffix.result}"
+  ado_project_description = "Project for ${var.prefix}"
+  ado_project_visibility  = "private"
+  ado_pipeline_name_1     = "${var.prefix}-pipeline-1"
+
+  az_resource_group_name  = "${var.prefix}${random_integer.suffix.result}"
+  az_storage_account_name = "${lower(var.prefix)}${random_integer.suffix.result}"
+  az_key_vault_name = "${var.prefix}${random_integer.suffix.result}"
+
+  pipeline_variables = {
+    storageaccount = "${lower(var.prefix)}${random_integer.suffix.result}"
+    container-name = "tfstatedata"
+    key = "terraform.tfstate"
+    sas-token = data.azurerm_storage_account_sas.state.sas
+    az-client-id = azuread_application.resource_creation.application_id
+    az-client-secret = random_password.resource_creation.result
+    az-subscription = "94a5c35a-b41a-4ffa-a37a-7d5df5344262"
+    az-tenant = "18c3b4f7-e526-4f98-939a-19118361cac0"
+  }
+
+  azad_service_connection_sp_name = "${var.prefix}-service-connection-${random_integer.suffix.result}"
+  azad_resource_creation_sp_name = "${var.prefix}-resource-creation-${random_integer.suffix.result}"
 }
